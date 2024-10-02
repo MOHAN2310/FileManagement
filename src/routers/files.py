@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from model import File
 from database import get_db
 from schema import FileCreate
-from utils import get_file_by_name
+from utils import get_file, get_file_by_name
 
 
 router = APIRouter(
@@ -27,3 +27,37 @@ def create_file(file: FileCreate, db: Session = Depends(get_db)):
             "folder": {"id": file_details.id, "name": file_details.name}
         }
     )
+
+
+@router.delete("/{file_id}")
+def delete_file(file_id: int, db: Session = Depends(get_db)):
+    file = get_file(db, file_id)
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    db.delete(file)
+    db.commit()
+    return JSONResponse(
+        content={
+            "message": "File has been deleted sucessfully",
+            "folder": {"id": file.id, "name": file.name}
+        }
+    )
+
+
+@router.put("/{file_id}/rename")
+def rename_file(file_id: int, new_name: str, db: Session = Depends(get_db)):
+    file = get_file(db, file_id)
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file.name = new_name
+    db.commit()
+    msg = f"File rename was successful for {file.name}"
+    return JSONResponse(
+        content={
+            "message": msg,
+            "folder": {"id": file.id, "name": file.name}
+        }
+    )
+
