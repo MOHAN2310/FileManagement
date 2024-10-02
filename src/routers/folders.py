@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from database import get_db
 from model import Folder
 from schema import FolderCreate
-from utils import get_folder_by_name, get_user
+from utils import get_folder, get_folder_by_name, get_user
 
 
 router = APIRouter(
@@ -28,3 +28,43 @@ def create_folder(folder: FolderCreate, db: Session = Depends(get_db)):
             "folder": {"id": folder_details.id, "name": folder_details.name}
         }
     )
+
+
+@router.delete("/{folder_id}")
+def delete_folder(folder_id: int, db: Session = Depends(get_db)):
+    folder = get_folder(db, folder_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found") 
+
+    if folder.parent_folder_id:
+        msg = "Folder has been deleted sucessfully"
+        db.delete(folder)
+        db.commit()
+    else:
+        msg = "Root Folder cannot be deleted"
+
+    return JSONResponse(
+        content={
+            "message": msg,
+            "folder": {"id": folder.id, "name": folder.name}
+        }
+    )
+
+
+
+@router.put("/{folder_id}/rename")
+def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
+    folder = get_folder(db, folder_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+
+    folder.name = new_name
+    db.commit()
+    msg = f"Folder rename was successful for {folder.name}"
+    return JSONResponse(
+        content={
+            "message": msg,
+            "folder": {"id": folder.id, "name": folder.name}
+        }
+    )
+
