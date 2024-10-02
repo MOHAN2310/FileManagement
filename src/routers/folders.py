@@ -51,7 +51,6 @@ def delete_folder(folder_id: int, db: Session = Depends(get_db)):
     )
 
 
-
 @router.put("/{folder_id}/rename")
 def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
     folder = get_folder(db, folder_id)
@@ -68,3 +67,26 @@ def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
         }
     )
 
+
+@router.put("/move-folder/{folder_id}")
+def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(get_db)):
+    folder = get_folder(folder_id=folder_id, db=db)
+    new_folder = get_folder(folder_id=new_folder_id, db=db)
+
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found.")
+    if not new_folder:
+        raise HTTPException(status_code=404, detail="New folder not found.")
+    if folder.parent_folder_id:
+        msg = f"Folder {folder.name} moved to {new_folder.name}"
+        folder.parent_folder_id = new_folder.id
+    else:
+        raise HTTPException(status_code=403, detail="Root folder cannot be modified.")
+    db.commit()
+
+    return JSONResponse(
+        content={
+            "message": msg,
+            "folder": {"id": folder.id, "name": folder.name}
+        }
+    )
