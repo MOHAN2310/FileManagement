@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from model import Folder
-from schema import FolderCreate
+from schema import FolderCreate, FolderResponse
 from utils import get_folder, get_folder_by_name, get_user
 
 
@@ -88,5 +88,22 @@ def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(get_db
         content={
             "message": msg,
             "folder": {"id": folder.id, "name": folder.name}
+        }
+    )
+
+
+@router.get("/{folder_id}/list-contents")
+def fetch_folder_info(folder_id: int, db: Session = Depends(get_db)): 
+    folder = get_folder(folder_id=folder_id, db=db)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Given folder not found in the database")
+    
+    folder_data = FolderResponse.from_orm(folder)
+    
+    msg = f"Folder {folder.name} contains {len(folder.subfolders)} subfolders and {len(folder.files)} files."
+    return JSONResponse(
+        content={
+            "message": msg,
+            "content": folder_data.dict()
         }
     )
