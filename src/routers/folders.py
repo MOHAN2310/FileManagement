@@ -14,14 +14,14 @@ router = APIRouter(
 )
 
 @router.post("/")
-def create_folder(folder: FolderCreate, db: Session = Depends(get_db)):
-    db_user = get_user(db=db, user_id=folder.user_id)
+async def create_folder(folder: FolderCreate, db: Session = Depends(get_db)):
+    db_user = await get_user(db=db, user_id=folder.user_id)
     db_folder = Folder(name=folder.name, parent_folder_id=folder.parent_folder_id, user_id=db_user.id)
     db.add(db_folder)
     db.commit()
     db.refresh(db_folder)
 
-    folder_details = get_folder_by_name(folder_name=db_folder.name, db=db)
+    folder_details = await get_folder_by_name(folder_name=db_folder.name, db=db)
     return JSONResponse(
         content={
             "message": "Folder has been created Sucessfully",
@@ -31,8 +31,8 @@ def create_folder(folder: FolderCreate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{folder_id}")
-def delete_folder(folder_id: int, db: Session = Depends(get_db)):
-    folder = get_folder(db, folder_id)
+async def delete_folder(folder_id: int, db: Session = Depends(get_db)):
+    folder = await get_folder(db, folder_id)
     if not folder:
         raise HTTPException(status_code=404, detail="Folder not found") 
 
@@ -52,8 +52,8 @@ def delete_folder(folder_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{folder_id}/rename")
-def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
-    folder = get_folder(db, folder_id)
+async def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
+    folder = await get_folder(db, folder_id)
     if not folder:
         raise HTTPException(status_code=404, detail="Folder not found")
 
@@ -69,9 +69,9 @@ def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
 
 
 @router.put("/move-folder/{folder_id}")
-def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(get_db)):
-    folder = get_folder(folder_id=folder_id, db=db)
-    new_folder = get_folder(folder_id=new_folder_id, db=db)
+async def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(get_db)):
+    folder = await get_folder(folder_id=folder_id, db=db)
+    new_folder = await get_folder(folder_id=new_folder_id, db=db)
 
     if not folder:
         raise HTTPException(status_code=404, detail="Folder not found.")
@@ -93,8 +93,8 @@ def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(get_db
 
 
 @router.get("/{folder_id}/list-contents")
-def fetch_folder_info(folder_id: int, db: Session = Depends(get_db)): 
-    folder = get_folder(folder_id=folder_id, db=db)
+async def fetch_folder_info(folder_id: int, db: Session = Depends(get_db)): 
+    folder = await get_folder(folder_id=folder_id, db=db)
     if not folder:
         raise HTTPException(status_code=404, detail="Given folder not found in the database")
     

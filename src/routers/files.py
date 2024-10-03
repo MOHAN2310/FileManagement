@@ -14,13 +14,13 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=FileCreate)
-def create_file(file: FileCreate, db: Session = Depends(get_db)):
+async def create_file(file: FileCreate, db: Session = Depends(get_db)):
     db_file = File(name=file.name, folder_id=file.folder_id)
     db.add(db_file)
     db.commit()
     db.refresh(db_file)
 
-    file_details = get_file_by_name(file_name=db_file.name, db=db)
+    file_details = await get_file_by_name(file_name=db_file.name, db=db)
     return JSONResponse(
         content={
             "message": "Flie has been created Sucessfully",
@@ -30,8 +30,8 @@ def create_file(file: FileCreate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{file_id}")
-def delete_file(file_id: int, db: Session = Depends(get_db)):
-    file = get_file(db, file_id)
+async def delete_file(file_id: int, db: Session = Depends(get_db)):
+    file = await get_file(db, file_id)
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
 
@@ -46,8 +46,8 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{file_id}/rename")
-def rename_file(file_id: int, new_name: str, db: Session = Depends(get_db)):
-    file = get_file(db, file_id)
+async def rename_file(file_id: int, new_name: str, db: Session = Depends(get_db)):
+    file = await get_file(db, file_id)
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
 
@@ -63,9 +63,9 @@ def rename_file(file_id: int, new_name: str, db: Session = Depends(get_db)):
 
 
 @router.put("/move-file/{file_id}")
-def move_file(file_id: int, new_folder_id: int, db: Session = Depends(get_db)):
-    file = get_file(file_id=file_id, db=db)
-    new_folder = get_folder(folder_id=new_folder_id, db=db)
+async def move_file(file_id: int, new_folder_id: int, db: Session = Depends(get_db)):
+    file = await get_file(file_id=file_id, db=db)
+    new_folder = await get_folder(folder_id=new_folder_id, db=db)
 
     if not file:
         raise HTTPException(status_code=404, detail="File not found.")
