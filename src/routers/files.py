@@ -9,7 +9,7 @@ from utils import get_file, get_file_by_name, get_folder
 
 
 router = APIRouter(
-    prefix="/file",
+    prefix="/files",
     tags=["FileOperations"]
 )
 
@@ -62,7 +62,7 @@ async def rename_file(file_id: int, new_name: str, db: Session = Depends(get_db)
     )
 
 
-@router.put("/move-file/{file_id}")
+@router.put("/{file_id}/move")
 async def move_file(file_id: int, new_folder_id: int, db: Session = Depends(get_db)):
     file = await get_file(file_id=file_id, db=db)
     new_folder = await get_folder(folder_id=new_folder_id, db=db)
