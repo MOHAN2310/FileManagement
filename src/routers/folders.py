@@ -9,7 +9,7 @@ from utils import get_folder, get_folder_by_name, get_user
 
 
 router = APIRouter(
-    prefix="/Folder",
+    prefix="/folders",
     tags=["FolderOperations"]
 )
 
@@ -68,7 +68,7 @@ async def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get
     )
 
 
-@router.put("/move-folder/{folder_id}")
+@router.put("/{folder_id}/move")
 async def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(get_db)):
     folder = await get_folder(folder_id=folder_id, db=db)
     new_folder = await get_folder(folder_id=new_folder_id, db=db)
@@ -92,7 +92,7 @@ async def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(
     )
 
 
-@router.get("/{folder_id}/list-contents")
+@router.get("/{folder_id}/contents")
 async def fetch_folder_info(folder_id: int, db: Session = Depends(get_db)): 
     folder = await get_folder(folder_id=folder_id, db=db)
     if not folder:
