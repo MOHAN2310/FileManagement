@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from schema import FolderResponse, FileResponse
 from database import get_db
-from utils import get_folder_by_name, get_file_by_name
+from utils import get_folder_by_name, get_file_by_name, get_folder_hierarchy
 
 
 router = APIRouter(
@@ -14,9 +14,10 @@ router = APIRouter(
 
 @router.post("/{name}")
 async def search_by_name(name: str, db: Session = Depends(get_db)):
-    search_result = await get_folder_by_name(folder_name=name, db=db)
+    search_result = await get_folder_by_name(folder_name=name, db=db)    
     if search_result:
         msg = f"Folder {search_result.name} contains {len(search_result.subfolders)} subfolders and {len(search_result.files)} files."
+        search_result = await get_folder_hierarchy(folder_id=search_result.id, db=db)
         result_orm = FolderResponse.from_orm(search_result)
     else:
         search_result = await get_file_by_name(file_name=name, db=db)

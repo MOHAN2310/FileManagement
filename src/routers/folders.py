@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from model import Folder
 from schema import FolderCreate, FolderResponse
-from utils import get_folder, get_folder_by_name, get_user
+from utils import get_folder, get_folder_by_name, get_folder_hierarchy, get_user
 
 
 router = APIRouter(
@@ -34,7 +34,7 @@ async def create_folder(folder: FolderCreate, db: Session = Depends(get_db)):
 async def delete_folder(folder_id: int, db: Session = Depends(get_db)):
     folder = await get_folder(db, folder_id)
     if not folder:
-        raise HTTPException(status_code=404, detail="Folder not found") 
+        raise HTTPException(status_code=404, detail=f"Folder {folder_id} not found") 
 
     if folder.parent_folder_id:
         msg = "Folder has been deleted sucessfully"
@@ -55,7 +55,7 @@ async def delete_folder(folder_id: int, db: Session = Depends(get_db)):
 async def rename_folder(folder_id: int, new_name: str, db: Session = Depends(get_db)):
     folder = await get_folder(db, folder_id)
     if not folder:
-        raise HTTPException(status_code=404, detail="Folder not found")
+        raise HTTPException(status_code=404, detail=f"Folder {folder_id} not found")
 
     folder.name = new_name
     db.commit()
@@ -74,9 +74,9 @@ async def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(
     new_folder = await get_folder(folder_id=new_folder_id, db=db)
 
     if not folder:
-        raise HTTPException(status_code=404, detail="Folder not found.")
+        raise HTTPException(status_code=404, detail=f"Folder {folder_id} not found.")
     if not new_folder:
-        raise HTTPException(status_code=404, detail="New folder not found.")
+        raise HTTPException(status_code=404, detail=f"New folder {new_folder_id} not found.")
     if folder.parent_folder_id:
         msg = f"Folder {folder.name} moved to {new_folder.name}"
         folder.parent_folder_id = new_folder.id
@@ -94,13 +94,13 @@ async def move_folder(folder_id: int, new_folder_id: int, db: Session = Depends(
 
 @router.get("/{folder_id}/contents")
 async def fetch_folder_info(folder_id: int, db: Session = Depends(get_db)): 
-    folder = await get_folder(folder_id=folder_id, db=db)
-    if not folder:
-        raise HTTPException(status_code=404, detail="Given folder not found in the database")
+    folders = await get_folder_hierarchy(folder_id=folder_id, db=db)
+    if not folders:
+        raise HTTPException(status_code=404, detail=f"Given folder {folder_id} not found in the database")
     
-    folder_data = FolderResponse.from_orm(folder)
+    folder_data = FolderResponse.from_orm(folders)
     
-    msg = f"Folder {folder.name} contains {len(folder.subfolders)} subfolders and {len(folder.files)} files."
+    msg = f"Folder '{folders.name}' and its hierarchy retrieved successfully, containing {len(folders.subfolders)} subfolders and {len(folders.files)} files."
     return JSONResponse(
         content={
             "message": msg,
