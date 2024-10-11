@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from database import get_db
@@ -14,6 +14,9 @@ router = APIRouter(
 
 @router.post("/")
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user =  await get_user_by_name(user_name=user.username, db=db)
+    if db_user:
+        raise HTTPException(status_code=409, detail="Another user with this name already exists.")
     db_user = User(username=user.username)
     db.add(db_user)
     db.commit()

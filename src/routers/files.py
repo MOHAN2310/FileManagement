@@ -33,7 +33,7 @@ async def create_file(file: FileCreate, db: Session = Depends(get_db)):
 async def delete_file(file_id: int, db: Session = Depends(get_db)):
     file = await get_file(db, file_id)
     if not file:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail=f"File {file_id} not found")
 
     db.delete(file)
     db.commit()
@@ -49,7 +49,7 @@ async def delete_file(file_id: int, db: Session = Depends(get_db)):
 async def rename_file(file_id: int, new_name: str, db: Session = Depends(get_db)):
     file = await get_file(db, file_id)
     if not file:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail=f"File {file_id} not found")
 
     file.name = new_name
     db.commit()
@@ -68,9 +68,9 @@ async def move_file(file_id: int, new_folder_id: int, db: Session = Depends(get_
     new_folder = await get_folder(folder_id=new_folder_id, db=db)
 
     if not file:
-        raise HTTPException(status_code=404, detail="File not found.")
+        raise HTTPException(status_code=404, detail=f"File {file_id} not found.")
     if not new_folder:
-        raise HTTPException(status_code=404, detail="destination folder not found.")
+        raise HTTPException(status_code=404, detail=f"destination folder {new_folder_id} not found.")
     
     file.folder_id = new_folder.id
     msg = f"File {file.name} moved to the folder {new_folder.name}"
